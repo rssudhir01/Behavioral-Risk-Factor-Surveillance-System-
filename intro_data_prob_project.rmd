@@ -1,0 +1,243 @@
+---
+title: "Exploring the BRFSS data"
+author: "Sudhir" 
+date:  "April 23 2020"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+### Load data
+
+Make sure your data and R Markdown files are in the same directory. When loaded
+your data file will be called `brfss2013`. Delete this note when before you submit 
+your work. 
+
+```{r load-data}
+load("brfss2013.Rdata")
+```
+
+* * *
+
+## Part 1: Data
+
+The Behavioral Risk Factor Surveillance System (BRFSS) data are derived from a the Center for Desease Control and Prevenstion (CDC) coordinating with administrative bodies (typically states). This data includes health information, demographic and lifestyle as reported by the study participants (summarized from https://www.cdc.gov/brfss/).
+
+These specific data were collected for the year 2013. The data were collected by phone (landline and cellular) surveys from a random sample of the populations within the administrative districts (states). The size is about 400,000.
+
+Because the participants were selected at random inferences of anayses performed should be generizable, but as there were no experiments performed, they are NOT suitable to determine causation.
+
+## Part 2: Research questions
+
+**Research quesion 1:**
+List of all states having good general health people belonging to which gender ? Do people having high exercise rate result in good health ?
+
+**Research quesion 2:**
+Do people with good eduction result in good income? Do people with high income own an individual house ? What is the marital status of an individual based on income level ?
+
+**Research quesion 3:**
+How are people satiisfied based on their Income level?
+
+## Part 3: Exploratory data analysis
+
+**Research quesion 1:**
+
+```{r}
+health_data1 <- select(brfss2013, X_state, sex, genhlth, medicare, 
+                      income2, educa, diabete3, hivtst6, toldhi2, cvdinfr4, exerhmm1) %>%
+      filter(!is.na(sex), !is.na(genhlth), !is.na(income2),!is.na(medicare),
+             !is.na(diabete3), !is.na(hivtst6), !is.na(toldhi2), !is.na(cvdinfr4), 
+             !is.na(exerhmm1)) %>% 
+  filter(genhlth %in% c('Excellent', 'Very good', 'Good') & hivtst6 == 'No' & 
+            diabete3 == 'No' &  exerhmm1 > 150 & medicare == 'Yes')
+```
+
+```{r}
+health_data1 %>%
+  group_by(X_state, sex, genhlth) %>%
+  summarise(count = n())
+
+# Therefore we can see among 491775 observations only 6967 observations having good health with no harmful diseases like AIDS, diabetes, and high exercise hours #
+
+```
+
+
+
+```{r}
+#Creating a plot using general health and exercise rate 
+
+my_health_card = brfss2013 %>%
+  filter(genhlth != 'NA')
+
+ggplot(data = my_health_card, aes(x = genhlth, y = exerhmm1, fill = sex),) +
+  geom_boxplot() +
+  scale_x_discrete(name = "General Health",
+                    labels = c('Poor' = 'Poor', 
+                                'Fair' = 'Fair', 
+                                'Good' = 'Good', 
+                                'Very good' = 'Very good', 
+                                'Excellent' = 'Excellent')) +
+  scale_y_continuous(name = "Excercise Rate") +
+  ggtitle("Does Exercise health affect general health ?") +
+  theme(
+    legend.text = element_text(size = 10),
+    plot.title = element_text(hjust = 0.5))
+ 
+
+rm(health_data1, my_health_card)
+
+```
+
+
+**Research quesion 2:**
+
+```{r}
+level_analysis = select(brfss2013, sex, educa, income2, employ1, marital, renthom1) %>%
+  filter(!is.na(sex), !is.na(educa), !is.na(income2),!is.na(employ1),
+             !is.na(marital), !is.na(renthom1))
+```
+
+
+```{r}
+ggplot(level_analysis, aes(income2)) + 
+      geom_bar(aes(fill = educa), position = "dodge") +
+      scale_x_discrete(name = "Income",
+                       labels = c("Less than $10,000" = "< $10,000", 
+                                  "Less than $15,000" = "< $15,000",
+                                  "Less than $20,000" = "< $20,000",
+                                  "Less than $25,000" = "< $25,000", 
+                                  "Less than $35,000" = "< $35,000",
+                                  "Less than $50,000" = "< $50,000", 
+                                  "Less than $75,000" = "< $75,000",
+                                  "$75,000 or more" = ">= $75,000")) +
+      scale_y_continuous(name = "Count") +
+      ggtitle("Income level based on Education") +
+      labs(fill = "Education") + 
+      scale_fill_discrete(labels = c("Never attended school or only kindergarten" = "Never attended school",
+                          "Grades 1 through 8 (Elementary)" = "Elementary",
+                          "Grades 9 though 11 (Some high school)" = "Some high school",
+                          "Grade 12 or GED (High school graduate)" = "High school graduate",
+                          "College 1 year to 3 years (Some college or technical school)" = "Some college or technical school",
+                          "College 4 years or more (College graduate)" = "College graduate")) +
+      theme(
+        axis.title.x =  element_text(size = 15),
+        axis.text.x =  element_text(size = 10),
+        axis.title.y =  element_text(size = 15),
+        axis.text.y = element_text(size = 10),
+        legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 20))
+```
+We can clearly see that are lot no of people who have completed their college and earn high amount of income when compared to few who did not complete college but manage to earn an income
+
+```{r}
+ggplot(data = level_analysis, aes(income2)) +
+  geom_bar(aes(fill = renthom1)) +
+  scale_x_discrete(name = 'Income',
+                   labels = c("Less than $10,000" = "< $10,000", 
+                                  "Less than $15,000" = "< $15,000",
+                                  "Less than $20,000" = "< $20,000",
+                                  "Less than $25,000" = "< $25,000", 
+                                  "Less than $35,000" = "< $35,000",
+                                  "Less than $50,000" = "< $50,000", 
+                                  "Less than $75,000" = "< $75,000",
+                                  "$75,000 or more" = ">= $75,000")) +
+  scale_y_continuous(name = "Count") +
+      ggtitle("Individual house based on Income level") +
+      labs(fill = "Education") + 
+      scale_fill_discrete(labels = c('Own' = 'Own',
+                              'Rent' = 'Rent',
+                              'Other Arrangement' = 'Other Arrangement')) +
+  theme(
+    
+    axis.title.x =  element_text(size = 15),
+    axis.text.x =  element_text(size = 10),
+    axis.title.y =  element_text(size = 15),
+    axis.text.y = element_text(size = 10),
+  
+    legend.position = 'bottom',
+    plot.title = element_text(hjust = 0.5, size = 15)
+  )
+```
+We could see that there are a lot of no people with high income. As the income level increases people tend to own house rather than living in rented house
+
+
+```{r}
+ggplot(data = level_analysis, aes(income2)) +
+  geom_bar(aes(fill = marital)) +
+  scale_x_discrete(name = 'Income',
+                   labels = c("Less than $10,000" = "< $10,000", 
+                                  "Less than $15,000" = "< $15,000",
+                                  "Less than $20,000" = "< $20,000",
+                                  "Less than $25,000" = "< $25,000", 
+                                  "Less than $35,000" = "< $35,000",
+                                  "Less than $50,000" = "< $50,000", 
+                                  "Less than $75,000" = "< $75,000",
+                                  "$75,000 or more" = ">= $75,000")) +
+  scale_y_continuous(name = "Count") +
+      ggtitle("Marital Status based on Income level") +
+      labs(fill = "Marital Status") + 
+      scale_fill_discrete(labels = c('Married' = 'Married',
+                                     'Divorced' = 'Divorced',
+                                     'Widowed' = 'Widowed',
+                                     'Separated' = 'Separated',
+                                     'Never married' = 'Single',
+                                     'A member of an unmarried couple' = 'Living Together')) +
+  theme(
+    
+    axis.title.x =  element_text(size = 15),
+    axis.text.x =  element_text(size = 10),
+    axis.title.y =  element_text(size = 15),
+    axis.text.y = element_text(size = 10),
+  
+    legend.position = 'bottom',
+    plot.title = element_text(hjust = 0.5, size = 15)
+  )
+
+rm(level_analysis)
+```
+
+
+
+**Research quesion 3:**
+
+```{r}
+satisfy = select(brfss2013, sex, income2, educa, lsatisfy) %>%
+  filter(!is.na(sex), !is.na(income2), !is.na(educa),!is.na(lsatisfy))
+```
+
+```{r}
+ggplot(satisfy, aes(income2)) + 
+      geom_bar(aes(fill = lsatisfy), position = "dodge") +
+      scale_x_discrete(name = "Income",
+                       labels = c("Less than $10,000" = "< $10,000", 
+                                  "Less than $15,000" = "< $15,000",
+                                  "Less than $20,000" = "< $20,000",
+                                  "Less than $25,000" = "< $25,000", 
+                                  "Less than $35,000" = "< $35,000",
+                                  "Less than $50,000" = "< $50,000", 
+                                  "Less than $75,000" = "< $75,000",
+                                  "$75,000 or more" = ">= $75,000")) +
+      labs(title = "Satisfaction based on Income level",
+           x = "Income", y = "Count", fill = "Satisfaction")+
+  theme(
+    
+    axis.title.x =  element_text(size = 15),
+    axis.text.x =  element_text(size = 10),
+    axis.title.y =  element_text(size = 15),
+    axis.text.y = element_text(size = 10),
+  
+    legend.position = 'bottom',
+    plot.title = element_text(hjust = 0.5, size = 15)
+  )
+```
+We can clearly see that people are generally satisfied but as their income level increases their satisfaction level increases
