@@ -1,4 +1,4 @@
-                  Behavioral Risk Factor Surveillance System (BRFSS)
+                              Behavioral Risk Factor Surveillance System (BRFSS)
 
 
 The Behavioral Risk Factor Surveillance System (BRFSS) data are derived from a the Center for Desease Control and Prevenstion (CDC) coordinating with administrative bodies (typically states). This data includes health information, demographic and lifestyle as reported by the study participants (summarized from https://www.cdc.gov/brfss/).
